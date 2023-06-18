@@ -6,6 +6,7 @@ import 'package:dart_openai/dart_openai.dart';
 import 'package:mail_app/repository/mail_summerize.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mail_app/widget/startup_screen.dart';
 
 import 'component/button/google_sign_in_button.dart';
 import 'infrastructure/google_api.dart';
@@ -19,7 +20,7 @@ Future<void> main() async {
   runApp(const ProviderScope(
     child: MaterialApp(
       title: 'Google Sign In',
-      home: ListPage(),
+      home: StartUpPage(),
     ),
   ));
 }

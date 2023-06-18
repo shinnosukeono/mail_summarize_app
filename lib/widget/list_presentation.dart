@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../component/button/google_sign_in_button.dart';
+import '../component/view/list_tile.dart';
 import '../state/notifier_google_account.dart';
 
 class ListPage extends ConsumerWidget {
@@ -43,14 +46,22 @@ class ListPage extends ConsumerWidget {
             title: const Text('email summarizing'),
           ),
           body: FutureBuilder(
-              future: gmailData.summarizeMailData(),
+              future: gmailData.summarizedScheduleData(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return CircularProgressIndicator();
                 } else if (snapshot.hasError) {
                   return Text('Error: ${snapshot.error}');
                 } else {
-                  return MailListView(mailData: gmailData.summarizedSchedule);
+                  final mailData = gmailData.summarizedSchedule;
+                  List<dynamic> jsonMailData = [];
+                  jsonMailData = jsonDecode(mailData!);
+                  jsonMailData.sort((a, b) {
+                    DateTime dateA = DateTime.parse(a['ymd']);
+                    DateTime dateB = DateTime.parse(b['ymd']);
+                    return dateA.compareTo(dateB);
+                  });
+                  return MailListView(jsonMailData: jsonMailData);
                 }
               }));
     }
@@ -58,22 +69,21 @@ class ListPage extends ConsumerWidget {
 }
 
 class MailListView extends StatelessWidget {
-  final List<String>? mailData;
+  final List<dynamic>? jsonMailData;
 
-  MailListView({this.mailData});
+  MailListView({this.jsonMailData});
 
   @override
   Widget build(BuildContext context) {
-    if (mailData == null || mailData!.isEmpty) {
+    if (jsonMailData == null || jsonMailData!.isEmpty) {
       return Center(child: Text('No mail data'));
     }
 
     return ListView.builder(
-      itemCount: mailData!.length,
+      itemCount: jsonMailData!.length,
       itemBuilder: (context, index) {
-        return ListTile(
-          title: Text(mailData![index]),
-        );
+        return buildListTile(jsonMailData![index]['summary'],
+            jsonMailData![index]['d'], jsonMailData![index]['dow']);
       },
     );
   }

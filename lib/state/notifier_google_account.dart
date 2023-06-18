@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -25,7 +27,7 @@ class SharedGoogleAccount extends ChangeNotifier {
     if (googleAccount == null) {
       await handleGoogleSignIn();
     }
-    notifyListeners();
+    //notifyListeners();
   }
 
   void handleAuthorizeScopes() {
@@ -40,7 +42,7 @@ final googleAccountProvider =
 
 class SharedGMailData extends ChangeNotifier {
   List<String>? rawData;
-  List<String>? summarizedSchedule;
+  String? summarizedSchedule;
   SharedGoogleAccount? googleAccount;
 
   SharedGMailData(this.googleAccount);
@@ -50,7 +52,7 @@ class SharedGMailData extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> summarizeMailData() async {
+  Future<void> summarizedScheduleData() async {
     summarizedSchedule = await detectSchedulesFromProcessedTexts(rawData!);
     //notifyListeners();
   }

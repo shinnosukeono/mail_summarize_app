@@ -25,23 +25,34 @@ Future<List<String>> fetchGMailsAsStr(user) async {
   return preprocessedTexts;
 }
 
-Future<List<String>> detectSchedulesFromRawTexts(
+Future<String> detectSchedulesFromRawTexts(
     List<ListEmails> listRawTexts) async {
-  List<Future<String>> schedules = [];
+  String schedules = '[';
   for (ListEmails rawText in listRawTexts) {
+    if (schedules != '[' && !schedules.endsWith(',')) {
+      schedules += ',';
+    }
     String preprocessedText = preprocessRawText(rawText);
-    var summarizedText = summarizeSchedules(preprocessedText);
-    schedules.add(summarizedText);
+    final summarizedText = await summarizeSchedules(preprocessedText);
+    if (summarizedText != 'No') {
+      schedules += summarizedText;
+    }
   }
-  return await Future.wait(schedules);
+  schedules += ']';
+  return schedules;
 }
 
-Future<List<String>> detectSchedulesFromProcessedTexts(
-    List<String> listTexts) async {
-  List<Future<String>> schedules = [];
+Future<String> detectSchedulesFromProcessedTexts(List<String> listTexts) async {
+  String schedules = '[';
   for (String text in listTexts) {
-    var summarizedText = summarizeSchedules(text);
-    schedules.add(summarizedText);
+    if (schedules != '[' && !schedules.endsWith(',')) {
+      schedules += ',';
+    }
+    final summarizedText = await summarizeSchedules(text);
+    if (summarizedText != 'No') {
+      schedules += summarizedText;
+    }
   }
-  return await Future.wait(schedules);
+  schedules += ']';
+  return schedules;
 }
