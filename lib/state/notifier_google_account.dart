@@ -45,6 +45,7 @@ class SharedGMailData extends ChangeNotifier {
   List<ListEmails>? rawData;
   List<ListSchedules>? summarizedSchedule;
   List<dynamic>? jsonSummarizedSchedule;
+  List<dynamic>? jsonSummarizedImportantSchedule;
 
   SharedGoogleAccount? googleAccount;
 
@@ -55,12 +56,21 @@ class SharedGMailData extends ChangeNotifier {
     notifyListeners();
   }
 
+  /*
+   * can't handle when the rawData is null because fetchMailData
+   * need GoogleSignInAccount object.
+   * Make sure fetchMailData has already been called before
+   * call this function.
+   */
   Future<void> summarizedScheduleData() async {
     summarizedSchedule = await detectSchedulesFromRawTexts(rawData!);
     //notifyListeners();
   }
 
   void jsonifySummarizedSchedule() {
+    if (summarizedSchedule == null) {
+      summarizedScheduleData();
+    }
     jsonSummarizedSchedule = summarizedSchedule!.map((e) {
       final json = jsonDecode(e.schedule);
       final d = json['d'].toString().padLeft(2, '0');
@@ -87,6 +97,15 @@ class SharedGMailData extends ChangeNotifier {
       json['id'] = e.id;
       return json;
     }).toList();
+  }
+
+  void extractImportantSchedule() {
+    if (jsonSummarizedSchedule == null) {
+      jsonifySummarizedSchedule();
+    }
+    jsonSummarizedImportantSchedule = jsonSummarizedSchedule!
+        .where((item) => item['fixed'] is bool && item['fixed'])
+        .toList();
   }
 }
 
