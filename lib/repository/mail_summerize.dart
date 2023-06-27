@@ -2,6 +2,16 @@ import '../infrastructure/google_api.dart';
 import '../infrastructure/html_scraper.dart';
 import '../infrastructure/openai_api.dart';
 
+class ListSchedules {
+  const ListSchedules({
+    required this.id,
+    required this.schedule,
+  });
+
+  final String id;
+  final String schedule;
+}
+
 String preprocessRawText(ListEmails rawText) {
   late String preprocessedText;
   switch (rawText.mimeType) {
@@ -15,6 +25,16 @@ String preprocessRawText(ListEmails rawText) {
   return preprocessedText;
 }
 
+List<String> parseSchedules(String summarizedSchedule) {
+  RegExp regExp = RegExp(r'\{.*?\}');
+  Iterable<Match> matches = regExp.allMatches(summarizedSchedule);
+  return matches.map((match) => match.group(0)!).toList();
+}
+
+Future<List<ListEmails>> fetchGMailsAsRaw(user) async {
+  return await fetchGoogleEmails(user);
+}
+
 Future<List<String>> fetchGMailsAsStr(user) async {
   List<ListEmails> listRawTexts = await fetchGoogleEmails(user);
   List<String> preprocessedTexts = [];
@@ -25,34 +45,36 @@ Future<List<String>> fetchGMailsAsStr(user) async {
   return preprocessedTexts;
 }
 
-Future<String> detectSchedulesFromRawTexts(
+Future<List<ListSchedules>> detectSchedulesFromRawTexts(
     List<ListEmails> listRawTexts) async {
-  String schedules = '[';
-  for (ListEmails rawText in listRawTexts) {
-    if (schedules != '[' && !schedules.endsWith(',')) {
-      schedules += ',';
-    }
-    String preprocessedText = preprocessRawText(rawText);
-    final summarizedText = await summarizeSchedules(preprocessedText);
-    if (summarizedText != 'No') {
-      schedules += summarizedText;
-    }
-  }
-  schedules += ']';
-  return schedules;
+  List<Future<List<ListSchedules>>> futures = listRawTexts.map((rawText) async {
+    String summarizedSchedule =
+        await summarizeSchedules(preprocessRawText(rawText));
+    List<String> parsedSchedules = parseSchedules(summarizedSchedule);
+    return parsedSchedules.map((parsedSchedule) {
+      print(parsedSchedule);
+      return ListSchedules(
+        id: rawText.id,
+        schedule: parsedSchedule,
+      );
+    }).toList();
+  }).toList();
+
+  List<List<ListSchedules>> nestedResults = await Future.wait(futures);
+  List<ListSchedules> results = nestedResults.expand((x) => x).toList();
+  return results;
 }
 
-Future<String> detectSchedulesFromProcessedTexts(List<String> listTexts) async {
-  String schedules = '[';
-  for (String text in listTexts) {
-    if (schedules != '[' && !schedules.endsWith(',')) {
-      schedules += ',';
-    }
-    final summarizedText = await summarizeSchedules(text);
-    if (summarizedText != 'No') {
-      schedules += summarizedText;
-    }
-  }
-  schedules += ']';
-  return schedules;
+/*
+Future<List<ListSchedules>> detectSchedulesFromProcessedTexts(List<String> listTexts) async {
+  List<Future<ListSchedules>> futures = listTexts.map((rawText) async {
+    String summarizedSchedule =
+        await summarizeSchedules(rawText);
+    return ListSchedules(
+      id: rawText.id,
+      schedule: summarizedSchedule,
+    );
+  }).toList();
+  return await Future.wait(futures);
 }
+*/

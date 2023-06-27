@@ -41,10 +41,14 @@ const maxResults = 10;
 
 class ListEmails {
   const ListEmails({
+    required this.id,
+    required this.threadId,
     required this.mimeType,
     required this.rawText,
   });
 
+  final String id;
+  final String threadId;
   final String mimeType;
   final String rawText;
 }
@@ -135,10 +139,15 @@ Future<List<ListEmails>> fetchGoogleEmails(user) async {
         Uri.parse(urlGetGmailMessage(msg['id'])),
         headers: headers,
       );
-      final payload = jsonDecode(response.body)['payload'];
+
+      final decoded = jsonDecode(response.body);
+      final id = decoded['id'];
+      final threadId = decoded['threadId'];
+      final payload = decoded['payload'];
       final parts = payload['parts'];
-      late String decodedData;
+      String? decodedData;
       late String partType;
+
       if (parts != null) {
         for (var part in parts) {
           final partData = part['body'];
@@ -151,13 +160,23 @@ Future<List<ListEmails>> fetchGoogleEmails(user) async {
           }
         }
         //print(decodedData);
-        listRawTexts.add(ListEmails(mimeType: partType, rawText: decodedData));
+        if (decodedData != null) {
+          listRawTexts.add(ListEmails(
+              id: id,
+              threadId: threadId,
+              mimeType: partType,
+              rawText: decodedData));
+        }
       } else {
         final data = payload['body']['data'];
         final partType = payload['mimeType'];
         decodedData = utf8.decode(base64Url.decode(data));
         //print(decodedData);
-        listRawTexts.add(ListEmails(mimeType: partType, rawText: decodedData));
+        listRawTexts.add(ListEmails(
+            id: id,
+            threadId: threadId,
+            mimeType: partType,
+            rawText: decodedData));
       }
     }
     return listRawTexts;

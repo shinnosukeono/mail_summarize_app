@@ -1,103 +1,52 @@
-import 'package:flutter/material.dart';
+import 'dart:collection';
 import 'package:device_calendar/device_calendar.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
-class CalendarPage extends StatefulWidget {
-  const CalendarPage({super.key});
+final DeviceCalendarPlugin deviceCalendarPlugin = DeviceCalendarPlugin();
 
-  @override
-  State createState() => _CalendarPageState();
+Future<UnmodifiableListView<Calendar>> retrieveCalendars() async {
+  var permissionsGranted = await deviceCalendarPlugin.hasPermissions();
+  if (permissionsGranted.isSuccess && !permissionsGranted.data!) {
+    permissionsGranted = await deviceCalendarPlugin.requestPermissions();
+    if (!permissionsGranted.isSuccess || !permissionsGranted.data!) {
+      throw Exception("Not granted access to your calendar");
+    }
+  }
+
+  final calendarsResult = await deviceCalendarPlugin.retrieveCalendars();
+  final calendars = calendarsResult.data;
+
+  if (calendars == null) {
+    throw Exception("Can not get calendars.\n"
+        "Emulatorを使用している場合で、カレンダーを使用したことがない場合、取得に失敗します。\n"
+        "Emulatorからカレンダーアプリを開いて、ログインしてからコードを実行してください。");
+  }
+
+  return calendars;
 }
 
-class _CalendarPageState extends State<CalendarPage> {
-  final DeviceCalendarPlugin _deviceCalendarPlugin = DeviceCalendarPlugin();
+Calendar getDefaultCalender(UnmodifiableListView<Calendar> calendars) {
+  return calendars.firstWhere((element) => element.isDefault ?? false);
+}
 
-  //late List<Calendar> _calendars;
-  late Calendar _selectedCalendar;
-  late Calendar? _defaultCalendar;
+Future<bool> addEventToCalendar(Calendar selectedCalendar, String summary,
+    DateTime dtStart, DateTime dtEnd) async {
+  tz.initializeTimeZones();
+  final Event event = Event(
+    selectedCalendar.id,
+    title: summary,
+    start: tz.TZDateTime.from(dtStart, tz.local),
+    end: tz.TZDateTime.from(dtEnd, tz.local),
+  );
 
-  @override
-  void initState() {
-    super.initState();
+  final Result<String> createResult =
+      (await deviceCalendarPlugin.createOrUpdateEvent(event))!;
+  if (createResult.isSuccess && (createResult.data?.isNotEmpty ?? false)) {
+    print('Event successfully added to calendar');
+  } else {
+    print('Error creating event');
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: FutureBuilder(
-          future: _getDefaultCalender(),
-          builder: (BuildContext context, AsyncSnapshot<Calendar> snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const CircularProgressIndicator();
-            }
-
-            if (snapshot.hasError) {
-              return Text(
-                snapshot.error.toString(),
-                style: TextStyle(fontSize: 32),
-              );
-            }
-
-            if (snapshot.hasData) {
-              return Column(
-                children: [
-                  Text(
-                    "DefaultCalendar: ${snapshot.data!.name}",
-                    style: TextStyle(fontSize: 32),
-                  )
-                ],
-              );
-            } else {
-              return const Text(
-                "データが存在しません",
-                style: TextStyle(fontSize: 32),
-              );
-            }
-          },
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _onPressedAddButton,
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  /// デフォルト設定のカレンダーを取得する
-  Future<Calendar> _getDefaultCalender() async {
-    // カレンダーの許可があるか確認、なければ取得する
-    var permissionsGranted = await _deviceCalendarPlugin.hasPermissions();
-    if (permissionsGranted.isSuccess && !permissionsGranted.data!) {
-      permissionsGranted = await _deviceCalendarPlugin.requestPermissions();
-      if (!permissionsGranted.isSuccess || !permissionsGranted.data!) {
-        throw Exception("Not granted access to your calendar");
-      }
-    }
-
-    // スマホ内のカレンダー一覧を取得する
-    final calendarsResult = await _deviceCalendarPlugin.retrieveCalendars();
-    final calendars = calendarsResult?.data;
-    if (calendars == null || calendars.isEmpty) {
-      throw Exception("Can not get calendars.\n"
-          "Emulatorを使用している場合で、カレンダーを使用したことがない場合、取得に失敗します。\n"
-          "Emulatorからカレンダーアプリを開いて、ログインしてからコードを実行してください。");
-    }
-
-    // カレンダー一覧の中からデフォルト設定のカレンダーを取得する
-    _defaultCalendar =
-        calendars!.firstWhere((element) => element.isDefault ?? false);
-    return _defaultCalendar!;
-  }
-
-  void _onPressedAddButton() {
-    if (_defaultCalendar == null || _defaultCalendar!.id == null) {
-      return;
-    }
-
-    // イベント追加ページへ遷移する
-    //context.goNamed(
-    //  "addEventPage",
-    //  params: {'defaultCalendarId': _defaultCalendar!.id!},
-    //);
-  }
+  return createResult.isSuccess && (createResult.data?.isNotEmpty ?? false);
 }

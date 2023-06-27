@@ -1,18 +1,33 @@
 import 'package:flutter/material.dart';
 
-Widget buildDateIcon(int date, String dayOfWeek) {
-  // 日付と曜日を元にアイコンを生成する処理を書くことができます
-  // ここでは仮に日付と曜日をテキストとして表示するアイコンを生成しています
+final dayOfWeekMapping = {
+  1: '月',
+  2: '火',
+  3: '水',
+  4: '木',
+  5: '金',
+  6: '土',
+  7: '日',
+};
+
+Widget buildDateIcon(dynamic jsonSummarizedSchedule) {
+  late int dayOfWeek;
+  try {
+    dayOfWeek = DateTime.parse(jsonSummarizedSchedule['ymd']).weekday;
+  } catch (e) {
+    dayOfWeek = 0;
+  }
+
   return CircleAvatar(
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          dayOfWeek,
+          (dayOfWeek == 0) ? '' : dayOfWeekMapping[dayOfWeek]!,
           style: const TextStyle(fontSize: 8.0),
         ),
         Text(
-          date.toString(),
+          jsonSummarizedSchedule['d'].toString(),
           style: const TextStyle(fontSize: 12.0),
         ),
       ],

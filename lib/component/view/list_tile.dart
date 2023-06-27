@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../icon/date_icon.dart';
+import 'package:mail_app/component/button/mailview_popup.dart';
 
-Widget buildListTile(String title, int date, String dayOfWeek) {
+import '/component/icon/date_icon.dart';
+
+Widget buildListTile(
+    BuildContext context, WidgetRef ref, jsonSummarizedSchedule) {
   return Container(
-    decoration: new BoxDecoration(
-        border: new Border(bottom: BorderSide(width: 1.0, color: Colors.grey))),
+    decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(width: 1.0, color: Colors.grey))),
     child: ListTile(
-      leading: buildDateIcon(date, dayOfWeek),
+      leading: buildDateIcon(jsonSummarizedSchedule),
       title: Text(
-        title,
-        style: TextStyle(color: Colors.black, fontSize: 18.0),
+        jsonSummarizedSchedule['summary'],
+        style: const TextStyle(color: Colors.black, fontSize: 18.0),
       ),
+      trailing:
+          buildPopupMailListMenuButton(context, ref, jsonSummarizedSchedule),
     ),
   );
 }

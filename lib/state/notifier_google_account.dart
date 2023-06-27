@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:format/format.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../infrastructure/google_api.dart';
@@ -41,20 +42,51 @@ final googleAccountProvider =
     ChangeNotifierProvider((ref) => SharedGoogleAccount());
 
 class SharedGMailData extends ChangeNotifier {
-  List<String>? rawData;
-  String? summarizedSchedule;
+  List<ListEmails>? rawData;
+  List<ListSchedules>? summarizedSchedule;
+  List<dynamic>? jsonSummarizedSchedule;
+
   SharedGoogleAccount? googleAccount;
 
   SharedGMailData(this.googleAccount);
 
   Future<void> fetchMailData(GoogleSignInAccount account) async {
-    rawData = await fetchGMailsAsStr(account);
+    rawData = await fetchGMailsAsRaw(account);
     notifyListeners();
   }
 
   Future<void> summarizedScheduleData() async {
-    summarizedSchedule = await detectSchedulesFromProcessedTexts(rawData!);
+    summarizedSchedule = await detectSchedulesFromRawTexts(rawData!);
     //notifyListeners();
+  }
+
+  void jsonifySummarizedSchedule() {
+    jsonSummarizedSchedule = summarizedSchedule!.map((e) {
+      final json = jsonDecode(e.schedule);
+      final d = json['d'].toString().padLeft(2, '0');
+      final m = json['m'].toString().padLeft(2, '0');
+      if (json['y'] == '') {
+        json['y'] = DateTime.now().year.toString();
+      }
+      json['ymd'] = '{0}-{1}-{2}'.format(json['y'], m, d);
+      json['dt_start'] = DateTime.parse(json['ymd']);
+      if (json['stime'] != '') {
+        json['dt_start'] =
+            DateTime.parse('{0} {1}'.format(json['ymd'], json['stime']));
+      } else {
+        json['dt_start'] = DateTime.parse(json['ymd']);
+      }
+
+      if (json['etime'] != '') {
+        json['dt_end'] =
+            DateTime.parse('{0} {1}'.format(json['ymd'], json['etime']));
+      } else {
+        json['dt_end'] = DateTime.parse(json['ymd']);
+      }
+
+      json['id'] = e.id;
+      return json;
+    }).toList();
   }
 }
 
