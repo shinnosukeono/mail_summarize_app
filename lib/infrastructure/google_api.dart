@@ -36,6 +36,8 @@ var urlGetGmailMessage = (final String msgId) {
   return 'https://gmail.googleapis.com/gmail/v1/users/me/messages/$msgId?format=full';
 };
 
+// var urlGetAccessToken = (final String )
+
 // the number of emails fetched at a time
 const maxResults = 10;
 
@@ -56,7 +58,7 @@ class ListEmails {
 GoogleSignIn googleSignIn = GoogleSignIn(
   clientId: googleAPIClientId,
   scopes: googleAPIScopes,
-  //forceCodeForRefreshToken: true,
+  forceCodeForRefreshToken: true,
 );
 
 // This is the on-click handler for the Sign In button that is rendered by Flutter.
@@ -90,15 +92,15 @@ Future<void> handleGoogleSignOut() => googleSignIn.disconnect();
 //
 // On the web, this must be called from an user interaction (button click).
 Future<void> handleGoogleAuthorizeScopes(
-    void Function(bool isAuthorized) update,
+    void Function(GoogleSignInAccount account, bool isAuthorized) update,
     GoogleSignInAccount? currentUser) async {
   bool isAuthorized = await googleSignIn.requestScopes(googleAPIScopes);
 
   if (isAuthorized) {
-    unawaited(fetchGoogleEmails(currentUser!));
+    unawaited(fetchGoogleEmails(await currentUser!.authHeaders));
   }
 
-  update(isAuthorized);
+  update(currentUser!, isAuthorized);
 }
 
 void setupGoogleSignInListener(
@@ -114,7 +116,7 @@ void setupGoogleSignInListener(
     }
 
     if (isAuthorized) {
-      unawaited(fetchGoogleEmails(account));
+      unawaited(fetchGoogleEmails(await account!.authHeaders));
     }
 
     // callback function (should be defined in StatefulWidget)
@@ -124,8 +126,8 @@ void setupGoogleSignInListener(
 
 // fetch emails and returns the list of raw texts of the emails.
 // the number of emails fetched is specified by 'maxResults'.
-Future<List<ListEmails>> fetchGoogleEmails(user) async {
-  final headers = await user.authHeaders;
+Future<List<ListEmails>> fetchGoogleEmails(Map<String, String> headers) async {
+  // final headers = await user.authHeaders;
   final response = await http.get(
     Uri.parse(urlGetGmailMessagesList(maxResults)),
     headers: headers,
@@ -184,3 +186,21 @@ Future<List<ListEmails>> fetchGoogleEmails(user) async {
     throw Exception('Failed to fetch emails');
   }
 }
+
+/*
+ * Google OAuth APIs that does not use google_sign_in package.
+ * Google_sign_in package requires a full google_sign_in 
+ * object to get a refresh token, which is impossible for us
+ * using flutter secure storage. 
+ */
+
+// Future<GoogleSignInAuthentication> getAuthentication(
+//     {required String email, required String authCode}) async {
+//   final GoogleSignInTokenData response =
+//       await GoogleSignInPlatform.instance.getTokens(
+//     email: email,
+//     shouldRecoverAuth: true,
+//   );
+
+//   return GoogleSignInAuthentication._(response);
+// }

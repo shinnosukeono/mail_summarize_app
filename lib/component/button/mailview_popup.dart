@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mail_app/state/notifier_google_account.dart';
 import '/component/view/add_event_dialog.dart';
 import '/component/view/mail_show_all.dart';
 import 'package:mail_app/state/notifier_mobile_calendar.dart';
@@ -8,6 +9,7 @@ import 'package:mail_app/state/notifier_mobile_calendar.dart';
 Widget buildPopupMailListMenuButton(
     BuildContext context, WidgetRef ref, dynamic jsonSummarizedSchedule) {
   final mobileCalendar = ref.watch(mobileCalendarProvider);
+  final googleAccount = ref.watch(googleAccountProvider);
   return PopupMenuButton<int>(
       itemBuilder: (context) => [
             const PopupMenuItem(
@@ -32,8 +34,9 @@ Widget buildPopupMailListMenuButton(
             Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) =>
-                      MailPage(id: jsonSummarizedSchedule['id'])),
+                  builder: (context) => MailPage(
+                      id: jsonSummarizedSchedule['id'],
+                      selectedAccount: googleAccount.selectedAccount)),
             );
           case 2:
             final result = await Navigator.push(

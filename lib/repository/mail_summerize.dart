@@ -31,12 +31,12 @@ List<String> parseSchedules(String summarizedSchedule) {
   return matches.map((match) => match.group(0)!).toList();
 }
 
-Future<List<ListEmails>> fetchGMailsAsRaw(user) async {
-  return await fetchGoogleEmails(user);
+Future<List<ListEmails>> fetchGMailsAsRaw(Map<String, String> headers) async {
+  return await fetchGoogleEmails(headers);
 }
 
-Future<List<String>> fetchGMailsAsStr(user) async {
-  List<ListEmails> listRawTexts = await fetchGoogleEmails(user);
+Future<List<String>> fetchGMailsAsStr(Map<String, String> headers) async {
+  List<ListEmails> listRawTexts = await fetchGoogleEmails(headers);
   List<String> preprocessedTexts = [];
   for (ListEmails rawText in listRawTexts) {
     String preprocessedText = preprocessRawText(rawText);
@@ -62,6 +62,7 @@ Future<List<ListSchedules>> detectSchedulesFromRawTexts(
 
   List<List<ListSchedules>> nestedResults = await Future.wait(futures);
   List<ListSchedules> results = nestedResults.expand((x) => x).toList();
+  print('summarize finished');
   return results;
 }
 

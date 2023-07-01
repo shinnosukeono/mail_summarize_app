@@ -14,12 +14,13 @@ class StartUpPage extends ConsumerWidget {
     final googleAccount = ref.watch(googleAccountProvider);
     return Scaffold(
         body: FutureBuilder(
-            future: googleAccount.handleSignIn(),
+            future: googleAccount.readAllHeaders(),
             builder: (BuildContext context, AsyncSnapshot snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 //waiting for sign-in to complete
                 return catScreen();
-              } else if (snapshot.hasError) {
+              } else if (snapshot.hasError ||
+                  googleAccount.googleAccount.isEmpty) {
                 return googleSignInScreen(googleAccount);
               } else {
                 /*
@@ -31,6 +32,11 @@ class StartUpPage extends ConsumerWidget {
                 });
                 return Container();
                 */
+                // if (googleAccount.googleAccount == {}) print('empty');
+                googleAccount.googleAccount.forEach((key, value) {
+                  print(key);
+                });
+                print(googleAccount.googleAccount.length);
                 return const ListPage();
               }
             }));

@@ -17,13 +17,8 @@ class ListPage extends ConsumerWidget {
      * gmailData.fetchMailData notifies when fetching completes,
      * resulting in this if clause to be skipped.
      */
-    if (gmailData.rawData == null) {
-      /*
-       * googleAccount.googleAccount can't be null because ListPage 
-       * is always called by StartUpPage(startup_screen.dart), 
-       * which checks if the sign in process succeeds.
-       */
-      gmailData.fetchMailData(googleAccount.googleAccount!);
+    if (gmailData.rawData.isEmpty) {
+      gmailData.fetchAllMailData();
       return Scaffold(
           appBar: AppBar(
             title: const Text('email loading'),
@@ -37,7 +32,7 @@ class ListPage extends ConsumerWidget {
         ),
         drawer: buildDrawerMailListButton(context),
         body: FutureBuilder(
-            future: gmailData.summarizedScheduleData(),
+            future: gmailData.summarizeAllScheduleData(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const CircularProgressIndicator();
@@ -45,13 +40,16 @@ class ListPage extends ConsumerWidget {
                 //TODO: error handling
                 return Text('Error: ${snapshot.error}');
               } else {
-                gmailData.jsonifySummarizedSchedule();
-                final jsonMailData = gmailData.jsonSummarizedSchedule!;
-                jsonMailData.sort((a, b) {
-                  DateTime dateA = DateTime.parse(a['ymd']);
-                  DateTime dateB = DateTime.parse(b['ymd']);
-                  return dateA.compareTo(dateB);
+                gmailData.summarizedSchedule.forEach((key, value) {
+                  gmailData.jsonifySummarizedSchedule(key);
                 });
+                final jsonMailData = gmailData
+                    .jsonSummarizedSchedule[googleAccount.selectedAccount];
+                // jsonMailData.sort((a, b) {
+                //   DateTime dateA = DateTime.parse(a['ymd']);
+                //   DateTime dateB = DateTime.parse(b['ymd']);
+                //   return dateA.compareTo(dateB);
+                // });
                 return MailListView(
                     context: context, jsonMailData: jsonMailData);
               }
@@ -71,17 +69,20 @@ class ListPageSimple extends ConsumerWidget {
 
     late dynamic jsonMailData;
     if (onlyImportantFlag) {
-      jsonMailData = gmailData.jsonSummarizedImportantSchedule;
+      gmailData.extractImportantSchedule(googleAccount.selectedAccount);
+      jsonMailData = gmailData
+          .jsonSummarizedImportantSchedule[googleAccount.selectedAccount];
     } else {
-      jsonMailData = gmailData.jsonSummarizedSchedule;
+      jsonMailData =
+          gmailData.jsonSummarizedSchedule[googleAccount.selectedAccount];
     }
 
     /*
      * gmailData.fetchMailData notifies when fetching completes,
      * resulting in this if clause to be skipped.
      */
-    if (gmailData.rawData == null) {
-      gmailData.fetchMailData(googleAccount.googleAccount!);
+    if (gmailData.rawData.isEmpty) {
+      gmailData.fetchMailData(googleAccount.selectedAccount);
       return Scaffold(
           appBar: AppBar(
             title: const Text('email loading'),

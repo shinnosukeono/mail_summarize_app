@@ -9,13 +9,15 @@ import '../../infrastructure/google_api.dart';
 
 class MailPage extends ConsumerWidget {
   final String id;
-  const MailPage({required this.id, Key? key}) : super(key: key);
+  final String selectedAccount;
+  const MailPage({required this.id, required this.selectedAccount, Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final gmailData = ref.watch(gmailDataProvider);
-    ListEmails mail =
-        gmailData.rawData!.firstWhere((element) => element.id == id);
+    ListEmails mail = gmailData.rawData[selectedAccount]!
+        .firstWhere((element) => element.id == id);
     if (mail.mimeType == 'text/html') {
       return Scaffold(
           appBar: AppBar(
