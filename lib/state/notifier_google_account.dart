@@ -1,28 +1,28 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:format/format.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import 'package:mail_app/infrastructure/util.dart';
 import '../infrastructure/google_api.dart';
-import '../repository/mail_summerize.dart';
+import '../repository/mail_summarize.dart';
 
 class SharedGoogleAccount extends ChangeNotifier {
   GoogleSignInAccount? googleAccount;
   bool isAuthorized = false;
+  bool accountChanged = false;
 
   SharedGoogleAccount();
 
-  void onUpdate(GoogleSignInAccount account, bool authorized) {
+  void onUpdate(GoogleSignInAccount? account, bool authorized) {
     googleAccount = account;
     isAuthorized = authorized;
+    accountChanged = true;
     //notifyListeners();
   }
 
   Future<void> handleSignIn() async {
     setupGoogleSignInListener((account, authorized) {
-      onUpdate(account!, authorized);
+      onUpdate(account, authorized);
     });
     await handleGoogleSignInSilently();
     if (googleAccount == null) {
@@ -31,11 +31,21 @@ class SharedGoogleAccount extends ChangeNotifier {
     //notifyListeners();
   }
 
+  Future<void> handleSignInExplicitly() async {
+    setupGoogleSignInListener((account, authorized) {
+      onUpdate(account, authorized);
+    });
+    await handleGoogleSignIn();
+    // notifyListeners();
+  }
+
   void handleAuthorizeScopes() {
     handleGoogleAuthorizeScopes((authorized) {
       isAuthorized = authorized;
     }, googleAccount);
   }
+
+  Future<void> handleSignOut() => handleGoogleSignOut();
 }
 
 final googleAccountProvider =
@@ -52,6 +62,7 @@ class SharedGMailData extends ChangeNotifier {
   SharedGMailData(this.googleAccount);
 
   Future<void> fetchMailData(GoogleSignInAccount account) async {
+    if (googleAccount!.accountChanged) googleAccount!.accountChanged = false;
     rawData = await fetchGMailsAsRaw(account);
     notifyListeners();
   }
@@ -71,38 +82,13 @@ class SharedGMailData extends ChangeNotifier {
     if (summarizedSchedule == null) {
       summarizedScheduleData();
     }
-    jsonSummarizedSchedule = summarizedSchedule!.map((e) {
-      final json = jsonDecode(e.schedule);
-      final d = json['d'].toString().padLeft(2, '0');
-      final m = json['m'].toString().padLeft(2, '0');
-      if (json['y'] == '') {
-        json['y'] = DateTime.now().year.toString();
-      }
-      json['ymd'] = '{0}-{1}-{2}'.format(json['y'], m, d);
-      json['dt_start'] = DateTime.parse(json['ymd']);
-      if (json['stime'] != '') {
-        json['dt_start'] =
-            DateTime.parse('{0} {1}'.format(json['ymd'], json['stime']));
-      } else {
-        json['dt_start'] = DateTime.parse(json['ymd']);
-      }
 
-      if (json['etime'] != '') {
-        json['dt_end'] =
-            DateTime.parse('{0} {1}'.format(json['ymd'], json['etime']));
-      } else {
-        json['dt_end'] = DateTime.parse(json['ymd']);
-      }
+    jsonSummarizedSchedule = jsonifySchedule(summarizedSchedule!);
 
-      json['id'] = e.id;
-      return json;
-    }).toList();
+    extractImportantSchedule();
   }
 
   void extractImportantSchedule() {
-    if (jsonSummarizedSchedule == null) {
-      jsonifySummarizedSchedule();
-    }
     jsonSummarizedImportantSchedule = jsonSummarizedSchedule!
         .where((item) => item['fixed'] is bool && item['fixed'])
         .toList();

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mail_app/state/notifier_google_account.dart';
 import 'package:mail_app/widget/list_presentation.dart';
+import 'package:mail_app/widget/startup_screen.dart';
 
-Widget buildDrawerMailListButton(BuildContext context) {
+Widget buildDrawerMailListButton(BuildContext context, WidgetRef ref) {
+  final googleAccount = ref.watch(googleAccountProvider);
   return Drawer(
     child: ListView(
       // padding: EdgeInsets.zero,
@@ -43,15 +47,15 @@ Widget buildDrawerMailListButton(BuildContext context) {
           title: Text('アカウント'),
         ),
         ListTile(
-          title: const Text('メニュー3'),
+          leading: const Icon(Icons.output_outlined),
+          title: const Text('ログアウト'),
           onTap: () {
-            // メニュー3がタップされたときの処理を書く
-          },
-        ),
-        ListTile(
-          title: const Text('メニュー4'),
-          onTap: () {
-            // メニュー4がタップされたときの処理を書く
+            googleAccount.handleSignOut();
+            Navigator.push(context, MaterialPageRoute(builder: (context) {
+              return const StartUpPage(
+                explicit: true,
+              );
+            }));
           },
         ),
       ],

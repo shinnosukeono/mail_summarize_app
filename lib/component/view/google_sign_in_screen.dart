@@ -7,6 +7,7 @@ Widget googleSignInScreen(SharedGoogleAccount googleAccount) {
   return Scaffold(
       appBar: AppBar(
         title: const Text('google sign in'),
+        automaticallyImplyLeading: false,
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceAround,

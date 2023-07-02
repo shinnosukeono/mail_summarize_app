@@ -3,24 +3,29 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:dart_openai/dart_openai.dart';
-import 'package:mail_app/repository/mail_summerize.dart';
+import 'package:mail_app/repository/mail_summarize.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mail_app/widget/startup_screen.dart';
 
 import 'component/button/google_sign_in_button.dart';
 import 'infrastructure/google_api.dart';
-import 'infrastructure/openai_api.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+// import 'infrastructure/openai_api.dart';
 
 import 'widget/list_presentation.dart';
 
 Future<void> main() async {
   await dotenv.load();
+  tz.initializeTimeZones();
   OpenAI.apiKey = dotenv.get('OPENAI_API_KEY');
   runApp(const ProviderScope(
     child: MaterialApp(
       title: 'Google Sign In',
-      home: StartUpPage(),
+      home: StartUpPage(
+        explicit: false,
+      ),
     ),
   ));
 }

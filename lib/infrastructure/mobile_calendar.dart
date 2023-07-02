@@ -3,6 +3,11 @@ import 'package:device_calendar/device_calendar.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'package:mail_app/infrastructure/util.dart';
+
+final startDay = DateTime(2023, 1, 1);
+final endDay = DateTime(2024, 1, 1);
+
 final DeviceCalendarPlugin deviceCalendarPlugin = DeviceCalendarPlugin();
 
 Future<UnmodifiableListView<Calendar>> retrieveCalendars() async {
@@ -49,4 +54,29 @@ Future<bool> addEventToCalendar(Calendar selectedCalendar, String summary,
   }
 
   return createResult.isSuccess && (createResult.data?.isNotEmpty ?? false);
+}
+
+Future<Map<DateTime, List<Event>>> retrieveEvents(
+    Calendar selectedCalendar, Map<DateTime, List<Event>> events) async {
+  final calendarEventsResult = await deviceCalendarPlugin.retrieveEvents(
+      selectedCalendar.id,
+      RetrieveEventsParams(startDate: startDay, endDate: endDay));
+
+  if (!calendarEventsResult.isSuccess || calendarEventsResult.data == null) {
+    return {};
+  }
+
+  for (final event in calendarEventsResult.data!) {
+    final dateTime =
+        (event.start == null) ? DateTime.now() : stripTZTime(event.start!);
+    print(dateTime);
+    print(event.title);
+    if (!events.containsKey(dateTime)) {
+      events[dateTime] = [event];
+    } else {
+      events[dateTime]!.add(event);
+    }
+  }
+
+  return events;
 }

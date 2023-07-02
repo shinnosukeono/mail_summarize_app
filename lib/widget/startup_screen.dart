@@ -7,14 +7,17 @@ import 'package:mail_app/component/view/cat_screen.dart';
 import 'package:mail_app/widget/list_presentation.dart';
 
 class StartUpPage extends ConsumerWidget {
-  const StartUpPage({super.key});
+  final bool explicit;
+  const StartUpPage({super.key, required this.explicit});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final googleAccount = ref.watch(googleAccountProvider);
     return Scaffold(
         body: FutureBuilder(
-            future: googleAccount.handleSignIn(),
+            future: explicit
+                ? googleAccount.handleSignInExplicitly()
+                : googleAccount.handleSignIn(),
             builder: (BuildContext context, AsyncSnapshot snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 //waiting for sign-in to complete
@@ -22,15 +25,6 @@ class StartUpPage extends ConsumerWidget {
               } else if (snapshot.hasError) {
                 return googleSignInScreen(googleAccount);
               } else {
-                /*
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ListPage()),
-                  );
-                });
-                return Container();
-                */
                 return const ListPage();
               }
             }));

@@ -19,13 +19,17 @@ Future<OpenAIChatCompletionModel> chatCompletion(String rawText) async {
   );
 }
 
-Future<String> summarizeSchedules(String rawText) async {
-  late OpenAIChatCompletionModel chatResponse;
+Future<String?> summarizeSchedules(String rawText) async {
+  OpenAIChatCompletionModel? chatResponse;
   try {
     //print('request sent');
     chatResponse = await chatCompletion(rawText);
   } catch (error) {
     debugPrint('Error summarizing the email: $error');
+  }
+
+  if (chatResponse == null) {
+    return null;
   }
 
   String responseText = chatResponse.choices.last.message.content;

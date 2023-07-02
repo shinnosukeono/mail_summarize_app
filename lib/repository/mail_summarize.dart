@@ -47,9 +47,13 @@ Future<List<String>> fetchGMailsAsStr(user) async {
 
 Future<List<ListSchedules>> detectSchedulesFromRawTexts(
     List<ListEmails> listRawTexts) async {
-  List<Future<List<ListSchedules>>> futures = listRawTexts.map((rawText) async {
-    String summarizedSchedule =
+  List<Future<List<ListSchedules>?>> futures =
+      listRawTexts.map((rawText) async {
+    String? summarizedSchedule =
         await summarizeSchedules(preprocessRawText(rawText));
+    if (summarizedSchedule == null) {
+      return null;
+    }
     List<String> parsedSchedules = parseSchedules(summarizedSchedule);
     return parsedSchedules.map((parsedSchedule) {
       print(parsedSchedule);
@@ -60,8 +64,9 @@ Future<List<ListSchedules>> detectSchedulesFromRawTexts(
     }).toList();
   }).toList();
 
-  List<List<ListSchedules>> nestedResults = await Future.wait(futures);
-  List<ListSchedules> results = nestedResults.expand((x) => x).toList();
+  List<List<ListSchedules>?> nestedResults = await Future.wait(futures);
+  List<ListSchedules> results =
+      nestedResults.where((x) => x != null).expand((x) => x!).toList();
   return results;
 }
 
