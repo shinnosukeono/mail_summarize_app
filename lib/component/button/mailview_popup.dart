@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '/component/view/add_event_dialog.dart';
-import '/component/view/mail_show_all.dart';
+import 'package:mail_app/widget/add_event_dialog.dart';
+import 'package:mail_app/widget/mail_show_all.dart';
 import 'package:mail_app/state/notifier_mobile_calendar.dart';
 
 Widget buildPopupMailListMenuButton(

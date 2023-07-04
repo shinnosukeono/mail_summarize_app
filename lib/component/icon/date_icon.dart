@@ -19,6 +19,7 @@ Widget buildDateIcon(dynamic jsonSummarizedSchedule) {
   }
 
   return CircleAvatar(
+    backgroundColor: const Color.fromRGBO(38, 94, 149, 1.0),
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [

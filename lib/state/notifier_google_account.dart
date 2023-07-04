@@ -56,15 +56,32 @@ class SharedGMailData extends ChangeNotifier {
   List<ListSchedules>? summarizedSchedule;
   List<dynamic>? jsonSummarizedSchedule;
   List<dynamic>? jsonSummarizedImportantSchedule;
+  bool failed = false;
 
   SharedGoogleAccount? googleAccount;
 
   SharedGMailData(this.googleAccount);
 
-  Future<void> fetchMailData(GoogleSignInAccount account) async {
+  Future<void> init(GoogleSignInAccount account) async {
+    await fetchMailData(account);
+    if (rawData == null) failed = true;
+    await summarizeScheduleData();
+    jsonifySummarizedSchedule();
+
+    /*
+     * Here, we can consider the information of the account
+     * and the mail data to be fully synced.
+     */
     if (googleAccount!.accountChanged) googleAccount!.accountChanged = false;
+    // print('init finished');
+    // print('failed: ${failed}');
+    // print('accountChanged: ${googleAccount!.accountChanged}');
+  }
+
+  Future<void> fetchMailData(GoogleSignInAccount account,
+      {bool notify = false}) async {
     rawData = await fetchGMailsAsRaw(account);
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
   /*
@@ -73,25 +90,26 @@ class SharedGMailData extends ChangeNotifier {
    * Make sure fetchMailData has already been called before
    * call this function.
    */
-  Future<void> summarizedScheduleData() async {
-    summarizedSchedule = await detectSchedulesFromRawTexts(rawData!);
-    //notifyListeners();
+  Future<void> summarizeScheduleData({bool notify = false}) async {
+    summarizedSchedule =
+        (rawData == null) ? null : await detectSchedulesFromRawTexts(rawData!);
+    if (notify) notifyListeners();
   }
 
-  void jsonifySummarizedSchedule() {
-    if (summarizedSchedule == null) {
-      summarizedScheduleData();
-    }
-
-    jsonSummarizedSchedule = jsonifySchedule(summarizedSchedule!);
-
+  void jsonifySummarizedSchedule({bool notify = false}) {
+    jsonSummarizedSchedule = (summarizedSchedule == null)
+        ? null
+        : jsonifySchedule(summarizedSchedule!);
     extractImportantSchedule();
+    if (notify) notifyListeners();
   }
 
   void extractImportantSchedule() {
-    jsonSummarizedImportantSchedule = jsonSummarizedSchedule!
-        .where((item) => item['fixed'] is bool && item['fixed'])
-        .toList();
+    jsonSummarizedImportantSchedule = (jsonSummarizedSchedule == null)
+        ? null
+        : jsonSummarizedSchedule!
+            .where((item) => item['fixed'] is bool && item['fixed'])
+            .toList();
   }
 }
 

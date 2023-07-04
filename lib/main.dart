@@ -20,10 +20,13 @@ Future<void> main() async {
   await dotenv.load();
   tz.initializeTimeZones();
   OpenAI.apiKey = dotenv.get('OPENAI_API_KEY');
-  runApp(const ProviderScope(
+  runApp(ProviderScope(
     child: MaterialApp(
+      theme: ThemeData(
+        appBarTheme: const AppBarTheme(color: Color.fromRGBO(38, 94, 149, 1.0)),
+      ),
       title: 'Google Sign In',
-      home: StartUpPage(
+      home: const StartUpPage(
         explicit: false,
       ),
     ),

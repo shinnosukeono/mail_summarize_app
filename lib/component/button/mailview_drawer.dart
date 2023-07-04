@@ -19,9 +19,7 @@ Widget buildDrawerMailListButton(BuildContext context, WidgetRef ref) {
           title: const Text('予定（すべて）'),
           onTap: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) {
-              return const ListPageSimple(
-                onlyImportantFlag: false,
-              );
+              return const ListPage();
             }));
           },
         ),
@@ -30,7 +28,7 @@ Widget buildDrawerMailListButton(BuildContext context, WidgetRef ref) {
           title: const Text('予定（重要）'),
           onTap: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) {
-              return const ListPageSimple(
+              return const ListPage(
                 onlyImportantFlag: true,
               );
             }));

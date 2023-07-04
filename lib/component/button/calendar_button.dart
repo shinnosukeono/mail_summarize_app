@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:mail_app/component/view/calendar_screen.dart';
+import 'package:mail_app/widget/calendar_screen.dart';
 
 Widget createCalendarButton(BuildContext context) {
   return GestureDetector(

@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-import '../../state/notifier_google_account.dart';
-import '../../infrastructure/google_api.dart';
+import 'package:mail_app/state/notifier_google_account.dart';
+import 'package:mail_app/infrastructure/google_api.dart';
 import 'package:mail_app/component/button/calendar_button.dart';
 
 class MailPage extends ConsumerWidget {

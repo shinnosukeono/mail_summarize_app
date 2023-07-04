@@ -39,6 +39,27 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         ),
         body: Column(children: [
           TableCalendar(
+            headerStyle: const HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+              leftChevronIcon: Icon(
+                Icons.chevron_left_outlined,
+                color: Color.fromRGBO(38, 94, 149, 1.0),
+              ),
+              rightChevronIcon: Icon(
+                Icons.chevron_right_outlined,
+                color: Color.fromRGBO(38, 94, 149, 1.0),
+              ),
+            ),
+            calendarStyle: const CalendarStyle(
+                selectedDecoration: BoxDecoration(
+                  color: Color.fromRGBO(38, 94, 149, 1.0),
+                  shape: BoxShape.circle,
+                ),
+                todayDecoration: BoxDecoration(
+                  color: Color.fromRGBO(38, 94, 149, 1.0),
+                  shape: BoxShape.circle,
+                )),
             firstDay: startDay,
             lastDay: endDay,
             focusedDay: _focusedDay,
