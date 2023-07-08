@@ -15,6 +15,7 @@
         "RGBO",
         "riverpod",
         "Schyler",
+        "sqflite",
         "stime"
     ],
 }

@@ -22,7 +22,7 @@ Future<OpenAIChatCompletionModel> chatCompletion(String rawText) async {
 Future<String?> summarizeSchedules(String rawText) async {
   OpenAIChatCompletionModel? chatResponse;
   try {
-    //print('request sent');
+    // print('request sent');
     chatResponse = await chatCompletion(rawText);
   } catch (error) {
     debugPrint('Error summarizing the email: $error');

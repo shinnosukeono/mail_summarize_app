@@ -25,13 +25,20 @@ class StartUpPage extends ConsumerWidget {
       } else {
         await googleAccount.handleSignIn();
       }
+
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (googleAccount.googleAccount == null) {
+        print('null error');
+      }
+
       await gmailData.init(googleAccount.googleAccount!);
     }(), builder: (BuildContext context, AsyncSnapshot snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
         //waiting for sign-in to complete
         return catScreen();
       } else if (snapshot.hasError) {
-        print(snapshot.error);
+        print('initialization error: ${snapshot.error}');
         return googleSignInScreen(googleAccount);
       } else {
         // gmailData.init(googleAccount.googleAccount!);

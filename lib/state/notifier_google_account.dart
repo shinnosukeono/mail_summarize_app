@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:format/format.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:mail_app/infrastructure/util.dart';
-import '../infrastructure/google_api.dart';
-import '../repository/mail_summarize.dart';
+import 'package:mail_app/infrastructure/google_api.dart';
+import 'package:mail_app/infrastructure/sqlite.dart';
+import 'package:mail_app/repository/mail_summarize.dart';
+import 'package:sqflite/sqflite.dart';
 
 class SharedGoogleAccount extends ChangeNotifier {
   GoogleSignInAccount? googleAccount;
@@ -17,7 +20,7 @@ class SharedGoogleAccount extends ChangeNotifier {
     googleAccount = account;
     isAuthorized = authorized;
     accountChanged = true;
-    //notifyListeners();
+    // notifyListeners();
   }
 
   Future<void> handleSignIn() async {
@@ -53,9 +56,12 @@ final googleAccountProvider =
 
 class SharedGMailData extends ChangeNotifier {
   List<ListEmails>? rawData;
+  List<String>? idList;
   List<ListSchedules>? summarizedSchedule;
   List<dynamic>? jsonSummarizedSchedule;
   List<dynamic>? jsonSummarizedImportantSchedule;
+  Database? database;
+  List<ListSchedules>? prevSummarizedSchedule;
   bool failed = false;
 
   SharedGoogleAccount? googleAccount;
@@ -65,8 +71,18 @@ class SharedGMailData extends ChangeNotifier {
   Future<void> init(GoogleSignInAccount account) async {
     await fetchMailData(account);
     if (rawData == null) failed = true;
+    if (await checkDatabaseExists(account.email)) {
+      print('database exists');
+      database = await connectToDataBase(account.email);
+    }
     await summarizeScheduleData();
     jsonifySummarizedSchedule();
+
+    if (database == null) {
+      print('database does not exist');
+      database = await createDataBase(account.email);
+      writeBackScheduleData(null);
+    }
 
     /*
      * Here, we can consider the information of the account
@@ -81,6 +97,9 @@ class SharedGMailData extends ChangeNotifier {
   Future<void> fetchMailData(GoogleSignInAccount account,
       {bool notify = false}) async {
     rawData = await fetchGMailsAsRaw(account);
+    if (rawData != null) {
+      idList = rawData!.map((e) => e.id).toList();
+    }
     if (notify) notifyListeners();
   }
 
@@ -91,15 +110,63 @@ class SharedGMailData extends ChangeNotifier {
    * call this function.
    */
   Future<void> summarizeScheduleData({bool notify = false}) async {
-    summarizedSchedule =
-        (rawData == null) ? null : await detectSchedulesFromRawTexts(rawData!);
+    if (database != null && rawData != null) {
+      prevSummarizedSchedule = await getDataFromIDList(database!, idList!);
+      print('length of the database: {}'.format(
+          prevSummarizedSchedule == null ? 0 : prevSummarizedSchedule!.length));
+    }
+
+    summarizedSchedule = null;
+    if (rawData != null) {
+      summarizedSchedule = [];
+      if (prevSummarizedSchedule != null) {
+        final List<ListEmails> rawDataNoMatch = rawData!.where((e) {
+          final List<ListSchedules> match =
+              prevSummarizedSchedule!.where((element) {
+            if (element.id == e.id) {
+              return true;
+            } else {
+              return false;
+            }
+          }).toList();
+          if (match.isNotEmpty) {
+            summarizedSchedule!.addAll(match);
+            return false;
+          } else {
+            return true;
+          }
+        }).toList();
+
+        if (rawDataNoMatch.isNotEmpty) {
+          final List<ListSchedules> newSchedule =
+              await detectSchedulesFromRawTexts(rawDataNoMatch);
+          if (newSchedule.isNotEmpty) {
+            summarizedSchedule!.addAll(newSchedule);
+            writeBackScheduleData(newSchedule);
+          }
+        }
+      } else {
+        summarizedSchedule!.addAll(await detectSchedulesFromRawTexts(rawData!));
+        writeBackScheduleData(null);
+      }
+    }
+
     if (notify) notifyListeners();
   }
 
+  Future<void> writeBackScheduleData(List<ListSchedules>? schedule) async {
+    schedule ??= summarizedSchedule;
+
+    if (database != null && schedule != null) {
+      insertData(database!, schedule);
+    }
+  }
+
   void jsonifySummarizedSchedule({bool notify = false}) {
-    jsonSummarizedSchedule = (summarizedSchedule == null)
-        ? null
-        : jsonifySchedule(summarizedSchedule!);
+    jsonSummarizedSchedule =
+        (summarizedSchedule == null || summarizedSchedule!.isEmpty)
+            ? null
+            : jsonifySchedule(summarizedSchedule!);
     extractImportantSchedule();
     if (notify) notifyListeners();
   }
